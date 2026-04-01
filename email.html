@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>邮件记录入口</title>
+  <style>
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f6f8fc;color:#1f2937}
+    .wrap{max-width:860px;margin:0 auto;padding:24px 16px 48px}
+    .card{background:#fff;border:1px solid #d8deea;border-radius:14px;padding:18px;margin-top:18px;box-shadow:0 10px 30px rgba(0,0,0,.05)}
+    h1{margin:0 0 8px;font-size:30px} h2{margin:0 0 14px;font-size:20px}
+    p,.muted{color:#6b7280;line-height:1.6}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .full{grid-column:1/-1}
+    label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+    input,select,textarea,button{font:inherit}
+    input,select,textarea{width:100%;box-sizing:border-box;border:1px solid #d8deea;border-radius:10px;padding:11px 12px;background:#fff}
+    textarea{min-height:100px;resize:vertical}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    button{border:0;border-radius:10px;padding:11px 16px;cursor:pointer;font-weight:600}
+    .primary{background:#2563eb;color:#fff}.secondary{background:#eef2ff;color:#1e3a8a}.ghost{background:#f3f4f6;color:#374151}
+    .preview{background:#0b1020;color:#d6e2ff;border-radius:12px;padding:14px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.6;min-height:120px}
+    .status{display:none;margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px;line-height:1.6}
+    .ok{display:block;background:#ecfdf5;color:#065f46}.warn{display:block;background:#fff7ed;color:#9a3412}.err{display:block;background:#fef2f2;color:#991b1b}
+    .share{margin-top:12px;padding:12px;border:1px dashed #bfdbfe;border-radius:12px;background:#f8fbff}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:26px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div style="display:inline-block;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:4px 10px;font-size:12px;margin-bottom:10px">邮件入口版</div>
+      <h1>结构化记录入口</h1>
+      <p>这个页面不直连 OpenClaw，也不保存 OpenClaw token。它只负责收集结构化数据，并生成标准邮件，供 OpenClaw 侧监控邮箱后入库。</p>
+    </div>
+
+    <div class="card">
+      <h2>邮件配置</h2>
+      <p class="muted">收件邮箱可以通过分享链接预填。链接使用 URL 的 <code>#fragment</code>，不会写进仓库，也通常不会随 HTTP 请求发给服务器。</p>
+      <div class="grid">
+        <div class="full">
+          <label for="recipientEmail">收件邮箱</label>
+          <input id="recipientEmail" type="email" placeholder="例如 openclaw-records@example.com" />
+        </div>
+        <div>
+          <label for="subjectPrefix">主题前缀</label>
+          <input id="subjectPrefix" type="text" value="[OpenClaw Record]" />
+        </div>
+        <div>
+          <label for="sendMode">发送方式</label>
+          <select id="sendMode">
+            <option value="mailto">打开默认邮件客户端</option>
+            <option value="gmail">打开 Gmail 写信页</option>
+            <option value="copy">只复制邮件正文</option>
+          </select>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="secondary" type="button" id="saveConfigBtn">保存配置</button>
+        <button class="ghost" type="button" id="clearConfigBtn">清空配置</button>
+      </div>
+      <div class="share">
+        <label for="shareUrl">分享链接</label>
+        <input id="shareUrl" type="text" readonly />
+        <div class="toolbar">
+          <button class="secondary" type="button" id="copyShareBtn">复制分享链接</button>
+        </div>
+      </div>
+      <div id="configStatus" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>记录表单</h2>
+      <div class="grid">
+        <div class="full">
+          <label for="feature">你要调用什么功能？</label>
+          <select id="feature">
+            <option value="blood_glucose">记血糖</option>
+            <option value="accounting">记账</option>
+          </select>
+        </div>
+      </div>
+      <form id="recordForm">
+        <div id="dynamicFields" class="grid" style="margin-top:14px"></div>
+        <div class="toolbar">
+          <button class="primary" type="submit">生成并发送邮件</button>
+          <button class="ghost" type="button" id="fillNowBtn">时间设为现在</button>
+        </div>
+      </form>
+      <div id="submitStatus" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>邮件主题预览</h2>
+      <div id="subjectPreview" class="preview"></div>
+    </div>
+
+    <div class="card">
+      <h2>邮件正文预览</h2>
+      <div id="bodyPreview" class="preview"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY='recording_app_email_config_v1';
+    const bloodGlucoseFields=[
+      {key:'timestamp',label:'记录时间',type:'datetime-local',required:true},
+      {key:'glucose_value',label:'血糖值',type:'number',step:'0.1',required:true,placeholder:'例如 5.4'},
+      {key:'unit',label:'单位',type:'select',required:true,options:['mmol/L','mg/dL']},
+      {key:'context',label:'场景',type:'select',required:true,options:['空腹','餐前','餐后1h','餐后2h','睡前','随机']},
+      {key:'note',label:'备注',type:'textarea',required:false,full:true,placeholder:'可选'}
+    ];
+    const accountingFields=[
+      {key:'timestamp',label:'记录时间',type:'datetime-local',required:true},
+      {key:'direction',label:'收支方向',type:'select',required:true,options:['支出','收入']},
+      {key:'category',label:'分类',type:'select',required:true,options:['餐饮','交通','购物','学习','房租','医疗','其他']},
+      {key:'item',label:'项目说明',type:'text',required:true,placeholder:'例如 咖啡 / 工资'},
+      {key:'amount',label:'金额',type:'number',step:'0.01',required:true,placeholder:'例如 3.50'},
+      {key:'currency',label:'币种',type:'select',required:true,options:['EUR','CNY','USD']},
+      {key:'payment_method',label:'支付方式',type:'select',required:true,options:['现金','银行卡','微信','支付宝','其他']},
+      {key:'note',label:'备注',type:'textarea',required:false,full:true,placeholder:'可选'}
+    ];
+
+    const recipientEmailInput=document.getElementById('recipientEmail');
+    const subjectPrefixInput=document.getElementById('subjectPrefix');
+    const sendModeInput=document.getElementById('sendMode');
+    const shareUrlInput=document.getElementById('shareUrl');
+    const configStatus=document.getElementById('configStatus');
+    const featureSelect=document.getElementById('feature');
+    const dynamicFields=document.getElementById('dynamicFields');
+    const recordForm=document.getElementById('recordForm');
+    const submitStatus=document.getElementById('submitStatus');
+    const subjectPreview=document.getElementById('subjectPreview');
+    const bodyPreview=document.getElementById('bodyPreview');
+
+    function nowLocalValue(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;}
+    function setStatus(el,kind,text){el.className=`status ${kind}`;el.textContent=text;}
+    function clearStatus(el){el.className='status';el.textContent='';}
+    function getFields(){return featureSelect.value==='accounting'?accountingFields:bloodGlucoseFields;}
+    function createField(field){const wrap=document.createElement('div');if(field.full)wrap.classList.add('full');const label=document.createElement('label');label.htmlFor=field.key;label.textContent=field.label+(field.required?' *':'');wrap.appendChild(label);let input;if(field.type==='select'){input=document.createElement('select');field.options.forEach(opt=>{const o=document.createElement('option');o.value=opt;o.textContent=opt;input.appendChild(o);});}else if(field.type==='textarea'){input=document.createElement('textarea');input.placeholder=field.placeholder||'';}else{input=document.createElement('input');input.type=field.type;input.placeholder=field.placeholder||'';if(field.step)input.step=field.step;if(field.type==='datetime-local')input.value=nowLocalValue();}input.id=field.key;input.required=!!field.required;input.addEventListener('input',updatePreview);input.addEventListener('change',updatePreview);wrap.appendChild(input);return wrap;}
+    function renderFields(){dynamicFields.innerHTML='';getFields().forEach(f=>dynamicFields.appendChild(createField(f)));updatePreview();clearStatus(submitStatus);}
+    function collectPayload(){const payload={source:'github-pages-email-form',feature:featureSelect.value};getFields().forEach(field=>{const el=document.getElementById(field.key);let value=el?el.value:'';if(field.type==='number'&&value!=='')value=Number(value);payload[field.key]=value;});return payload;}
+    function buildSubject(payload){return `${subjectPrefixInput.value.trim()||'[OpenClaw Record]'}[${payload.feature}]`;}
+    function buildBody(payload){return ['OPENCLAW_RECORD',`FEATURE: ${payload.feature}`,`SOURCE: ${payload.source}`,'JSON:',JSON.stringify(payload,null,2)].join('\n');}
+    function updatePreview(){const payload=collectPayload();subjectPreview.textContent=buildSubject(payload);bodyPreview.textContent=buildBody(payload);updateShareUrl();}
+    function saveConfig(){localStorage.setItem(STORAGE_KEY,JSON.stringify({recipientEmail:recipientEmailInput.value.trim(),subjectPrefix:subjectPrefixInput.value.trim(),sendMode:sendModeInput.value}));updateShareUrl();setStatus(configStatus,'ok','配置已保存到当前浏览器。');}
+    function clearConfig(){localStorage.removeItem(STORAGE_KEY);recipientEmailInput.value='';subjectPrefixInput.value='[OpenClaw Record]';sendModeInput.value='mailto';updateShareUrl();setStatus(configStatus,'warn','已清空当前浏览器中的配置。');}
+    function loadConfig(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return;const cfg=JSON.parse(raw);recipientEmailInput.value=cfg.recipientEmail||'';subjectPrefixInput.value=cfg.subjectPrefix||'[OpenClaw Record]';sendModeInput.value=cfg.sendMode||'mailto';}catch(e){console.warn(e);}}
+    function loadHashConfig(){const hash=location.hash?location.hash.slice(1):'';if(!hash)return;const p=new URLSearchParams(hash);if(p.get('recipientEmail'))recipientEmailInput.value=p.get('recipientEmail');if(p.get('subjectPrefix'))subjectPrefixInput.value=p.get('subjectPrefix');if(p.get('sendMode'))sendModeInput.value=p.get('sendMode');}
+    function updateShareUrl(){const p=new URLSearchParams();if(recipientEmailInput.value.trim())p.set('recipientEmail',recipientEmailInput.value.trim());if(subjectPrefixInput.value.trim())p.set('subjectPrefix',subjectPrefixInput.value.trim());if(sendModeInput.value)p.set('sendMode',sendModeInput.value);shareUrlInput.value=`${location.origin}${location.pathname}${p.toString()?'#'+p.toString():''}`;}
+    async function copyShareUrl(){updateShareUrl();try{await navigator.clipboard.writeText(shareUrlInput.value);setStatus(configStatus,'ok','分享链接已复制。');}catch{setStatus(configStatus,'warn','复制失败，请手动复制。');}}
+    async function copyText(text){try{await navigator.clipboard.writeText(text);setStatus(submitStatus,'ok','邮件正文已复制。');}catch{setStatus(submitStatus,'warn','复制失败，请手动复制。');}}
+    function openMailto(to,subject,body){location.href=`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;}
+    function openGmail(to,subject,body){const url=new URL('https://mail.google.com/mail/u/0/');url.searchParams.set('view','cm');url.searchParams.set('fs','1');url.searchParams.set('to',to);url.searchParams.set('su',subject);url.searchParams.set('body',body);window.open(url.toString(),'_blank','noopener');}
+    function fillNow(){const ts=document.getElementById('timestamp');if(ts){ts.value=nowLocalValue();updatePreview();}}
+    function submitRecord(e){e.preventDefault();clearStatus(submitStatus);if(!recordForm.reportValidity()){setStatus(submitStatus,'err','请先补全必填项。');return;}const to=recipientEmailInput.value.trim();if(!to){setStatus(submitStatus,'err','请先填写收件邮箱。');return;}const payload=collectPayload();const subject=buildSubject(payload);const body=buildBody(payload);if(sendModeInput.value==='mailto'){openMailto(to,subject,body);setStatus(submitStatus,'ok','已尝试打开默认邮件客户端。');}else if(sendModeInput.value==='gmail'){openGmail(to,subject,body);setStatus(submitStatus,'ok','已打开 Gmail 写信页。');}else{copyText(body);}}
+
+    document.getElementById('saveConfigBtn').addEventListener('click',saveConfig);
+    document.getElementById('clearConfigBtn').addEventListener('click',clearConfig);
+    document.getElementById('copyShareBtn').addEventListener('click',copyShareUrl);
+    document.getElementById('fillNowBtn').addEventListener('click',fillNow);
+    recipientEmailInput.addEventListener('input',updateShareUrl);
+    subjectPrefixInput.addEventListener('input',updateShareUrl);
+    sendModeInput.addEventListener('change',updateShareUrl);
+    featureSelect.addEventListener('change',renderFields);
+    recordForm.addEventListener('submit',submitRecord);
+
+    loadConfig();
+    loadHashConfig();
+    renderFields();
+    updateShareUrl();
+  </script>
+</body>
+</html>
