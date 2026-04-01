@@ -1,7 +1,515 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>记录入口</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --line: #d9deea;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --ok-bg: #ecfdf5;
+      --ok-text: #065f46;
+      --warn-bg: #fff7ed;
+      --warn-text: #9a3412;
+      --err-bg: #fef2f2;
+      --err-text: #991b1b;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      background: linear-gradient(180deg, #f7f8fb 0%, #eef4ff 100%);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    .hero {
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .secondary {
+      background: #eef2ff;
+      color: #1e3a8a;
+    }
+
+    .ghost {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      display: none;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .status.ok {
+      display: block;
+      background: var(--ok-bg);
+      color: var(--ok-text);
+    }
+
+    .status.warn {
+      display: block;
+      background: var(--warn-bg);
+      color: var(--warn-text);
+    }
+
+    .status.err {
+      display: block;
+      background: var(--err-bg);
+      color: var(--err-text);
+    }
+
+    .preview {
+      background: #0b1020;
+      color: #d6e2ff;
+      border-radius: 12px;
+      padding: 14px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 120px;
+    }
+
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 760px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero h1 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
 <body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+  <div class="container">
+    <section class="hero">
+      <div class="badge">公开前端，不内置任何密钥</div>
+      <h1>结构化记录入口</h1>
+      <p>先配置 OpenClaw 连接信息，再选择功能进行记录。页面只收集结构化数据；敏感配置仅保存在当前浏览器。</p>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>OpenClaw 连接配置</h2>
+        <p class="hint">由于这是公开网站，地址和 token 不会写进仓库。请由你或管理员在使用时输入，并保存到当前浏览器。</p>
+        <div class="form-grid">
+          <div class="full">
+            <label for="gatewayUrl">Gateway URL</label>
+            <input id="gatewayUrl" type="url" placeholder="例如：https://example.com" />
+          </div>
+          <div>
+            <label for="endpointPath">Endpoint Path</label>
+            <input id="endpointPath" type="text" placeholder="/hooks/record" value="/hooks/record" />
+          </div>
+          <div>
+            <label for="bearerToken">Bearer Token</label>
+            <input id="bearerToken" type="password" placeholder="输入后仅保存到当前浏览器" />
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="secondary" type="button" id="saveConfigBtn">保存配置</button>
+          <button class="ghost" type="button" id="clearConfigBtn">清空配置</button>
+        </div>
+        <div id="configStatus" class="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>记录表单</h2>
+        <div class="form-grid">
+          <div class="full">
+            <label for="feature">你要调用什么功能？</label>
+            <select id="feature">
+              <option value="blood_glucose">记血糖</option>
+              <option value="accounting">记账</option>
+            </select>
+          </div>
+        </div>
+
+        <form id="recordForm">
+          <div id="dynamicFields" class="form-grid" style="margin-top: 14px;"></div>
+          <div class="toolbar">
+            <button class="primary" type="submit">提交记录</button>
+            <button class="ghost" type="button" id="fillNowBtn">时间设为现在</button>
+          </div>
+        </form>
+        <div id="submitStatus" class="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>将要发送的 JSON</h2>
+        <div id="jsonPreview" class="preview"></div>
+      </div>
+
+      <div class="card">
+        <details>
+          <summary>当前页面默认约定</summary>
+          <div class="hint">
+            <p>1. 默认向 <code>/hooks/record</code> 发送 <code>POST</code> 请求。</p>
+            <p>2. 请求头包含 <code>Content-Type: application/json</code> 和 <code>Authorization: Bearer &lt;token&gt;</code>。</p>
+            <p>3. 发送的是结构化 JSON，不是自然语言。</p>
+            <p>4. 管理员可在 OpenClaw 侧把该请求映射到固定脚本，分别写入 <code>blood_glucose.csv</code> 和 <code>accounting.csv</code>。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "recording_app_openclaw_config_v1";
+
+    const bloodGlucoseFields = [
+      { key: "timestamp", label: "记录时间", type: "datetime-local", required: true, full: false },
+      { key: "glucose_value", label: "血糖值", type: "number", step: "0.1", required: true, placeholder: "例如 5.4", full: false },
+      { key: "unit", label: "单位", type: "select", required: true, options: ["mmol/L", "mg/dL"], full: false },
+      { key: "context", label: "场景", type: "select", required: true, options: ["空腹", "餐前", "餐后1h", "餐后2h", "睡前", "随机"], full: false },
+      { key: "note", label: "备注", type: "textarea", required: false, placeholder: "可选", full: true }
+    ];
+
+    const accountingFields = [
+      { key: "timestamp", label: "记录时间", type: "datetime-local", required: true, full: false },
+      { key: "direction", label: "收支方向", type: "select", required: true, options: ["支出", "收入"], full: false },
+      { key: "category", label: "分类", type: "select", required: true, options: ["餐饮", "交通", "购物", "学习", "房租", "医疗", "其他"], full: false },
+      { key: "item", label: "项目说明", type: "text", required: true, placeholder: "例如 咖啡 / 工资", full: false },
+      { key: "amount", label: "金额", type: "number", step: "0.01", required: true, placeholder: "例如 3.50", full: false },
+      { key: "currency", label: "币种", type: "select", required: true, options: ["EUR", "CNY", "USD"], full: false },
+      { key: "payment_method", label: "支付方式", type: "select", required: true, options: ["现金", "银行卡", "微信", "支付宝", "其他"], full: false },
+      { key: "note", label: "备注", type: "textarea", required: false, placeholder: "可选", full: true }
+    ];
+
+    const featureSelect = document.getElementById("feature");
+    const dynamicFields = document.getElementById("dynamicFields");
+    const jsonPreview = document.getElementById("jsonPreview");
+    const recordForm = document.getElementById("recordForm");
+    const submitStatus = document.getElementById("submitStatus");
+    const configStatus = document.getElementById("configStatus");
+
+    const gatewayUrlInput = document.getElementById("gatewayUrl");
+    const endpointPathInput = document.getElementById("endpointPath");
+    const bearerTokenInput = document.getElementById("bearerToken");
+
+    function nowLocalValue() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function normalizeUrl(base, path) {
+      const b = (base || "").trim().replace(/\/$/, "");
+      const p = path.startsWith("/") ? path : `/${path}`;
+      return `${b}${p}`;
+    }
+
+    function setStatus(el, kind, text) {
+      el.className = `status ${kind}`;
+      el.textContent = text;
+    }
+
+    function clearStatus(el) {
+      el.className = "status";
+      el.textContent = "";
+    }
+
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const cfg = JSON.parse(raw);
+        gatewayUrlInput.value = cfg.gatewayUrl || "";
+        endpointPathInput.value = cfg.endpointPath || "/hooks/record";
+        bearerTokenInput.value = cfg.bearerToken || "";
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+
+    function saveConfig() {
+      const cfg = {
+        gatewayUrl: gatewayUrlInput.value.trim(),
+        endpointPath: endpointPathInput.value.trim() || "/hooks/record",
+        bearerToken: bearerTokenInput.value.trim()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+      setStatus(configStatus, "ok", "配置已保存到当前浏览器。");
+    }
+
+    function clearConfig() {
+      localStorage.removeItem(STORAGE_KEY);
+      gatewayUrlInput.value = "";
+      endpointPathInput.value = "/hooks/record";
+      bearerTokenInput.value = "";
+      setStatus(configStatus, "warn", "已清空当前浏览器中的配置。");
+    }
+
+    function getFieldsForFeature(feature) {
+      return feature === "accounting" ? accountingFields : bloodGlucoseFields;
+    }
+
+    function createField(field) {
+      const wrapper = document.createElement("div");
+      if (field.full) wrapper.classList.add("full");
+
+      const label = document.createElement("label");
+      label.htmlFor = field.key;
+      label.textContent = field.label + (field.required ? " *" : "");
+      wrapper.appendChild(label);
+
+      let input;
+      if (field.type === "select") {
+        input = document.createElement("select");
+        field.options.forEach(opt => {
+          const o = document.createElement("option");
+          o.value = opt;
+          o.textContent = opt;
+          input.appendChild(o);
+        });
+      } else if (field.type === "textarea") {
+        input = document.createElement("textarea");
+        input.placeholder = field.placeholder || "";
+      } else {
+        input = document.createElement("input");
+        input.type = field.type;
+        input.placeholder = field.placeholder || "";
+        if (field.step) input.step = field.step;
+        if (field.type === "datetime-local") input.value = nowLocalValue();
+      }
+
+      input.id = field.key;
+      input.name = field.key;
+      input.required = !!field.required;
+      input.addEventListener("input", updatePreview);
+      input.addEventListener("change", updatePreview);
+      wrapper.appendChild(input);
+
+      return wrapper;
+    }
+
+    function renderFields() {
+      dynamicFields.innerHTML = "";
+      const fields = getFieldsForFeature(featureSelect.value);
+      fields.forEach(field => dynamicFields.appendChild(createField(field)));
+      updatePreview();
+      clearStatus(submitStatus);
+    }
+
+    function collectPayload() {
+      const feature = featureSelect.value;
+      const payload = {
+        source: "github-pages-form",
+        feature
+      };
+      const fields = getFieldsForFeature(feature);
+      fields.forEach(field => {
+        const el = document.getElementById(field.key);
+        let value = el ? el.value : "";
+        if (field.type === "number" && value !== "") value = Number(value);
+        payload[field.key] = value;
+      });
+      return payload;
+    }
+
+    function updatePreview() {
+      jsonPreview.textContent = JSON.stringify(collectPayload(), null, 2);
+    }
+
+    async function submitRecord(event) {
+      event.preventDefault();
+      clearStatus(submitStatus);
+
+      const gatewayUrl = gatewayUrlInput.value.trim();
+      const endpointPath = endpointPathInput.value.trim() || "/hooks/record";
+      const bearerToken = bearerTokenInput.value.trim();
+
+      if (!gatewayUrl) {
+        setStatus(submitStatus, "err", "请先填写 Gateway URL。");
+        return;
+      }
+
+      if (!bearerToken) {
+        setStatus(submitStatus, "err", "请先填写 Bearer Token。");
+        return;
+      }
+
+      if (!recordForm.reportValidity()) {
+        setStatus(submitStatus, "err", "请先补全必填项。");
+        return;
+      }
+
+      const payload = collectPayload();
+      const targetUrl = normalizeUrl(gatewayUrl, endpointPath);
+
+      try {
+        setStatus(submitStatus, "warn", "正在提交，请稍候...");
+        const response = await fetch(targetUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${bearerToken}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await response.text();
+        if (!response.ok) {
+          setStatus(submitStatus, "err", `提交失败：HTTP ${response.status}。响应：${text || "无内容"}`);
+          return;
+        }
+
+        setStatus(submitStatus, "ok", `提交成功。HTTP ${response.status}${text ? `；响应：${text}` : ""}`);
+      } catch (err) {
+        setStatus(submitStatus, "err", `请求异常：${err.message}`);
+      }
+    }
+
+    function fillNow() {
+      const ts = document.getElementById("timestamp");
+      if (ts) {
+        ts.value = nowLocalValue();
+        updatePreview();
+      }
+    }
+
+    document.getElementById("saveConfigBtn").addEventListener("click", saveConfig);
+    document.getElementById("clearConfigBtn").addEventListener("click", clearConfig);
+    document.getElementById("fillNowBtn").addEventListener("click", fillNow);
+    featureSelect.addEventListener("change", renderFields);
+    recordForm.addEventListener("submit", submitRecord);
+
+    loadConfig();
+    renderFields();
+  </script>
 </body>
 </html>
