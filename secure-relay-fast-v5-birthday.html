@@ -105,7 +105,23 @@
 
   <script>
     const targetPath = 'secure-relay-fast-v4.html';
-    const targetUrl = targetPath + window.location.search + window.location.hash;
+
+    function getHashParams() {
+      return new URLSearchParams(window.location.hash ? window.location.hash.slice(1) : '');
+    }
+
+    function buildTargetUrl() {
+      const params = getHashParams();
+      params.delete('birthdayTest');
+      params.delete('testBirthday');
+      const cleanHash = params.toString();
+      return targetPath + window.location.search + (cleanHash ? '#' + cleanHash : '');
+    }
+
+    function isBirthdayTestMode() {
+      const params = getHashParams();
+      return params.get('birthdayTest') === '1' || params.get('testBirthday') === '1';
+    }
 
     function isBeijingMay21() {
       const parts = new Intl.DateTimeFormat('en-US', {
@@ -119,7 +135,10 @@
       return month === '05' && day === '21';
     }
 
-    if (!isBeijingMay21()) {
+    const targetUrl = buildTargetUrl();
+    const shouldShowBirthday = isBirthdayTestMode() || isBeijingMay21();
+
+    if (!shouldShowBirthday) {
       window.location.replace(targetUrl);
     } else {
       const frame = document.getElementById('appFrame');
