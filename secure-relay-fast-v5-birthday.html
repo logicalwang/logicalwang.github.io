@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>安全中继记录入口</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f6f8fc;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    .birthday-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.48);
+      backdrop-filter: blur(6px);
+      padding: 20px;
+    }
+
+    .birthday-card {
+      width: min(520px, 92vw);
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+      padding: 34px 26px 28px;
+      text-align: center;
+      border: 1px solid #e5e7eb;
+      animation: popIn 360ms ease-out;
+    }
+
+    .birthday-emoji {
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+
+    .birthday-title {
+      margin: 0 0 10px;
+      font-size: 32px;
+      line-height: 1.25;
+      color: #111827;
+      font-weight: 800;
+    }
+
+    .birthday-subtitle {
+      margin: 0 0 22px;
+      color: #6b7280;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .birthday-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 22px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .birthday-button:hover {
+      background: #1d4ed8;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: translateY(10px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <iframe id="appFrame" title="安全中继记录入口"></iframe>
+
+  <div id="birthdayOverlay" class="birthday-overlay" role="dialog" aria-modal="true" aria-labelledby="birthdayTitle">
+    <div class="birthday-card">
+      <div class="birthday-emoji">🎂🎉</div>
+      <h1 id="birthdayTitle" class="birthday-title">生日快乐，爸爸！</h1>
+      <p class="birthday-subtitle">祝您生日快乐，身体健康，天天开心。</p>
+      <button id="birthdayClose" class="birthday-button" type="button">继续填写</button>
+    </div>
+  </div>
+
+  <script>
+    const targetPath = 'secure-relay-fast-v4.html';
+    const targetUrl = targetPath + window.location.search + window.location.hash;
+
+    function isBeijingMay21() {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Shanghai',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(new Date());
+
+      const month = parts.find(part => part.type === 'month')?.value;
+      const day = parts.find(part => part.type === 'day')?.value;
+      return month === '05' && day === '21';
+    }
+
+    if (!isBeijingMay21()) {
+      window.location.replace(targetUrl);
+    } else {
+      const frame = document.getElementById('appFrame');
+      const overlay = document.getElementById('birthdayOverlay');
+      const closeButton = document.getElementById('birthdayClose');
+
+      frame.src = targetUrl;
+      overlay.style.display = 'flex';
+
+      closeButton.addEventListener('click', () => {
+        overlay.style.display = 'none';
+      });
+    }
+  </script>
+</body>
+</html>
