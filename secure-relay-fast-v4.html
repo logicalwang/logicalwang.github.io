@@ -1,30 +1,90 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>安全中继记录入口 v4</title>
-  <style>
-    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f6f8fc;color:#1f2937}
-    .wrap{max-width:940px;margin:0 auto;padding:24px 16px 48px}
-    .card{background:#fff;border:1px solid #d8deea;border-radius:14px;padding:18px;margin-top:18px;box-shadow:0 10px 30px rgba(0,0,0,.05)}
-    h1{margin:0 0 8px;font-size:30px}h2{margin:0 0 14px;font-size:20px}
-    p,.muted{color:#6b7280;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}
-    label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;box-sizing:border-box;border:1px solid #d8deea;border-radius:10px;padding:11px 12px;background:#fff}textarea{min-height:110px;resize:vertical}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:10px;padding:11px 16px;cursor:pointer;font-weight:600}.primary{background:#2563eb;color:#fff}.secondary{background:#eef2ff;color:#1e3a8a}.ghost{background:#f3f4f6;color:#374151}
-    .preview{background:#0b1020;color:#d6e2ff;border-radius:12px;padding:14px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.6;min-height:120px;overflow:auto}
-    .status{display:none;margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px;line-height:1.6}.ok{display:block;background:#ecfdf5;color:#065f46}.warn{display:block;background:#fff7ed;color:#9a3412}.err{display:block;background:#fef2f2;color:#991b1b}
-    .meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.meta-box{border:1px solid #d8deea;border-radius:10px;padding:10px 12px;background:#fafcff}.meta-label{font-size:12px;color:#6b7280;margin-bottom:4px}.meta-value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;word-break:break-all}
-    .share{margin-top:12px;padding:12px;border:1px dashed #bfdbfe;border-radius:12px;background:#f8fbff}.small{font-size:12px;color:#6b7280;line-height:1.6;margin-top:8px}code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
-    @media (max-width:760px){.grid,.meta{grid-template-columns:1fr}h1{font-size:26px}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>sealed-inbox · 安全记录入口</title>
+<style>
+:root{
+  --bg:#eef2f9; --card:#ffffff; --ink:#0f172a; --muted:#64748b;
+  --line:#e2e8f0; --accent:#2563eb; --accent-dark:#1d4ed8;
+  --ok-bg:#dcfce7; --ok-ink:#166534; --err-bg:#fee2e2; --err-ink:#991b1b;
+  --warn-bg:#fef3c7; --warn-ink:#92400e; --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:linear-gradient(180deg,#0f172a 0%,#1e293b 180px,var(--bg) 320px);
+  min-height:100vh;color:var(--ink);padding:14px 12px 40px}
+.wrap{max-width:760px;margin:0 auto}
+.hero{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#f8fafc;border:1px solid #334155;
+  border-radius:var(--radius);padding:26px 22px 20px;margin-bottom:14px;
+  box-shadow:0 10px 30px rgba(15,23,42,.35)}
+.hero .badge{display:inline-block;background:rgba(125,211,252,.16);color:#7dd3fc;
+  border:1px solid rgba(125,211,252,.35);border-radius:999px;padding:3px 12px;
+  font-size:12px;letter-spacing:.5px;margin-bottom:12px}
+.hero h1{font-size:1.7em;letter-spacing:.3px}
+.hero p{margin-top:10px;color:#cbd5e1;font-size:.9em;line-height:1.7}
+.hero code{background:rgba(255,255,255,.1);padding:1px 6px;border-radius:6px;color:#7dd3fc}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+h2{font-size:1.05em;color:#1e293b;margin-bottom:4px}
+h2 + .muted{margin-bottom:12px}
+.muted,.small{color:var(--muted);font-size:.84em;line-height:1.6}
+.small{margin-top:10px}
+label{display:block;font-size:.84em;font-weight:600;color:#334155;margin:0 0 6px 2px}
+input,select,textarea{width:100%;padding:11px 12px;font-size:1em;color:var(--ink);
+  background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;outline:none;
+  transition:border-color .15s, box-shadow .15s;font-family:inherit}
+textarea{min-height:96px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(37,99,235,.18);background:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid .full{grid-column:1 / -1}
+.grid [style*="margin-top"]{margin-top:0 !important}
+.toolbar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+button{border:none;border-radius:10px;padding:12px 20px;font-size:.95em;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:transform .1s, box-shadow .15s, background .15s}
+button:active{transform:scale(.98)}
+.primary{flex:1;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;
+  box-shadow:0 4px 12px rgba(37,99,235,.35)}
+.primary:hover{box-shadow:0 6px 16px rgba(37,99,235,.45)}
+.secondary{background:#fff;color:var(--accent-dark);border:1.5px solid var(--accent)}
+.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+button:hover{filter:brightness(1.03)}
+.status{border-radius:10px;padding:11px 13px;margin-top:12px;font-size:.88em;
+  line-height:1.55;display:none}
+.status.ok{display:block;background:var(--ok-bg);color:var(--ok-ink);border:1px solid #bbf7d0}
+.status.err{display:block;background:var(--err-bg);color:var(--err-ink);border:1px solid #fecaca}
+.status.warn{display:block;background:var(--warn-bg);color:var(--warn-ink);border:1px solid #fde68a}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 4px}
+.meta-box{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+.meta-label{font-size:.72em;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.meta-value{font-family:ui-monospace,Menlo,monospace;font-size:.82em;color:var(--ink);
+  margin-top:4px;word-break:break-all}
+#relayConfig{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px}
+#relayConfig h2{font-size:.98em}
+.share{margin-top:16px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:12px}
+.share label{margin-top:0}
+.preview{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76em;
+  white-space:pre-wrap;word-break:break-all;line-height:1.55;max-height:320px;overflow-y:auto}
+@media (max-width:640px){
+  .grid{grid-template-columns:1fr}
+  .meta{grid-template-columns:repeat(3,1fr)}
+  button{width:100%}
+  .toolbar button{width:100%}
+  .hero h1{font-size:1.45em}
+}
+</style>
 </head>
 <body>
 <div class="wrap">
-  <div class="card">
-    <div style="display:inline-block;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:4px 10px;font-size:12px;margin-bottom:10px">快速填写版 v4</div>
-    <h1>结构化记录入口</h1>
-    <p>这个版本修正了 HMAC canonical string 的分隔符，现与 OpenClaw 后端一致使用 <code>|</code>。签名只使用内存中的 <code>effectiveAuthToken</code>，不会从 localStorage 自动恢复 secret。</p>
+
+  <div class="hero">
+    <div class="badge">快速填写版 v4 · 端到端加密</div>
+    <h1>安全记录入口</h1>
+    <p>记录在本页加密后才离开你的设备：邮件服务器只能看到不透明密文。
+    签名只使用本页内存中的授权密钥，不会从 localStorage 自动恢复 secret。</p>
   </div>
 
   <div class="card">
@@ -53,11 +113,11 @@
       <div><label for="sendMode">发送方式</label><select id="sendMode"><option value="relay_post">第三方表单中继 POST</option><option value="mailto">默认邮件客户端</option><option value="gmail">Gmail 写信页</option><option value="copy">只复制密文</option></select></div>
       <div><label for="keyId">密钥 ID (kid)</label><input id="keyId" type="text" placeholder="例如 record-link-001" /></div>
       <div><label for="authToken">授权密钥</label><input id="authToken" type="password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" placeholder="共享密钥 / 令牌" /></div>
-      <div class="full"><label for="publicKeyPem">OpenClaw 公钥 PEM（RSA-OAEP, SPKI）</label><textarea id="publicKeyPem" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea></div>
+      <div class="full"><label for="publicKeyPem">接收端公钥 PEM（RSA-OAEP, SPKI）</label><textarea id="publicKeyPem" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea></div>
     </div>
 
-    <div id="relayConfig" style="margin-top:18px">
-      <h2 style="font-size:18px">第三方表单中继配置</h2>
+    <div id="relayConfig">
+      <h2>第三方表单中继配置</h2>
       <div class="grid">
         <div class="full"><label for="relayUrl">Relay POST URL</label><input id="relayUrl" type="url" placeholder="例如 https://example-form-service.com/submit" /></div>
         <div><label for="relayBodyField">密文字段名</label><input id="relayBodyField" type="text" value="message" /></div>
@@ -84,7 +144,7 @@
     <div id="configStatus" class="status"></div>
   </div>
 
-  <div class="card"><h2>密文信封预览</h2><div id="envelopePreview" class="preview"></div></div>
+  <div class="card"><h2>密文信封预览</h2><div id="envelopePreview" class="preview">填写 kid、授权密钥和公钥后，这里会显示将要发送的加密信封。</div></div>
 </div>
 <script>
 const STORAGE_KEY='recording_app_secure_relay_config_v4';
